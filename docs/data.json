@@ -1094,6 +1094,22 @@
       "name": "workspaces",
       "skills": [],
       "version": "1.0.0"
+    },
+    {
+      "commands": [
+        {
+          "argument_hint": "[start-date] [end-date] [accomplishments or file path]",
+          "description": "Build quarterly accomplishment summaries with dense formatting and competency mapping",
+          "name": "build",
+          "synopsis": ""
+        }
+      ],
+      "description": "Build quarterly accomplishment summaries with dense formatting and Red Hat competency mapping",
+      "has_readme": true,
+      "hooks": [],
+      "name": "quarterly-connection",
+      "skills": [],
+      "version": "0.0.1"
     }
   ]
 }

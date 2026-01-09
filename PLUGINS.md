@@ -22,6 +22,7 @@ This document lists all available Claude Code plugins and their commands in the 
 - [Openshift](#openshift-plugin)
 - [Origin](#origin-plugin)
 - [Prow Job](#prow-job-plugin)
+- [Quarterly Connection](#quarterly-connection-plugin)
 - [Session](#session-plugin)
 - [Sosreport](#sosreport-plugin)
 - [Test Coverage](#test-coverage-plugin)
@@ -269,6 +270,15 @@ A plugin to analyze and inspect Prow CI job results
 - **`/prow-job:extract-must-gather` `prowjob-url`** - Extract and decompress must-gather archives from Prow job artifacts
 
 See [plugins/prow-job/README.md](plugins/prow-job/README.md) for detailed documentation.
+
+### Quarterly Connection Plugin
+
+Build quarterly accomplishment summaries with dense formatting and competency mapping
+
+**Commands:**
+- **`/quarterly-connection:build` `[start-date] [end-date] [accomplishments or file path]`** - Build quarterly accomplishment summaries with dense formatting and competency mapping
+
+See [plugins/quarterly-connection/README.md](plugins/quarterly-connection/README.md) for detailed documentation.
 
 ### Session Plugin
 

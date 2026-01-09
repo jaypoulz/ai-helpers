@@ -138,6 +138,11 @@
       "name": "workspaces",
       "source": "./plugins/workspaces",
       "description": "Manage isolated git worktree workspaces for multi-repo development"
+    },
+    {
+      "name": "quarterly-connection",
+      "source": "./plugins/quarterly-connection",
+      "description": "Build quarterly accomplishment summaries with dense formatting and Red Hat competency mapping"
     }
   ]
 }
