@@ -1,11 +1,13 @@
 # Jira Plugin
 
-Comprehensive Jira integration for Claude Code, providing AI-powered tools to analyze issues, create solutions, and generate status rollups.
+Jira integration for Claude Code. Analyze issues, create solutions, and generate status rollups.
+
+**Note:** This plugin is configured for Red Hat's Jira instance (issues.redhat.com) with templates and workflows designed for Red Hat product teams. Templates use Red Hat-specific custom fields and project conventions.
 
 ## Features
 
 - 🔍 **Issue Analysis and Solutions** - Analyze JIRA issues and create pull requests to solve them
-- 📊 **Status Rollups** - Generate comprehensive status rollup comments for any Jira issue given a date range
+- 📊 **Status Rollups** - Generate status rollup comments for any Jira issue given a date range
 - 📝 **Weekly Status Updates** - Automate weekly status summary updates with intelligent activity analysis and color-coded health indicators
 - 📋 **Backlog Grooming** - Analyze new bugs and cards for grooming meetings
 - 🏷️ **Activity Type Classification** - AI-powered classification of JIRA tickets into Sankey activity types, with single-issue and batch modes
@@ -55,6 +57,33 @@ Ensure you have the ai-helpers marketplace enabled, via [the instructions here](
 |------|---------|
 | [reference/markdown-for-jira.md](reference/markdown-for-jira.md) | Markdown formatting guide for Jira descriptions |
 
+## Common Conventions
+
+### Jira Formatting
+
+**Heading Standards:**
+
+Templates use Jira Wiki markup headings:
+- Main headings: `h4.`
+- Subheadings: `h5.`
+- Bullet lists: `* Item`
+
+**MCP vs Direct API:**
+
+**CRITICAL:** When using bold text in descriptions, formatting differs based on tool used.
+
+**When using MCP tools** (`mcp__atlassian__jira_create_issue`, `mcp__atlassian__jira_update_issue`):
+- Bold text: `**text**` (double asterisks)
+- MCP tools automatically convert Markdown to Jira Wiki markup
+
+**When using Jira REST API directly** (curl commands):
+- Bold text: `*text*` (single asterisks)
+- API requires native Jira Wiki markup (no conversion)
+
+**Always check before creating/updating issues:**
+1. Are you using an MCP tool? → Use `**text**` for bold
+2. Are you using the API directly? → Use `*text*` for bold
+
 ## Available Commands
 
 ### `/jira:solve` - Analyze and Solve JIRA Issues
@@ -72,7 +101,7 @@ See [commands/solve.md](commands/solve.md) for full documentation.
 
 ### `/jira:status-rollup` - Generate Weekly Status Rollups
 
-Generate comprehensive status rollup comments for any Jira issue by recursively analyzing all child issues and their activity within a date range. The command extracts insights from changelogs and comments to create well-formatted status summaries.
+Generate status rollup comments for any Jira issue by recursively analyzing all child issues and their activity within a date range. The command extracts insights from changelogs and comments to create well-formatted status summaries.
 
 **Usage:**
 ```bash
@@ -150,7 +179,7 @@ See [commands/batch-categorize-activity-types.md](commands/batch-categorize-acti
 
 ### `/jira:generate-test-plan` - Generate Test Steps
 
-Generate comprehensive test steps for a JIRA issue by analyzing related pull requests. The command supports auto-discovery of PRs from the JIRA issue or manual specification of specific PRs to analyze.
+Generate test steps for a JIRA issue by analyzing related pull requests. The command supports auto-discovery of PRs from the JIRA issue or manual specification of specific PRs to analyze.
 
 **Usage:**
 ```bash
@@ -197,10 +226,11 @@ Create well-formed Jira issues (stories, epics, features, tasks, bugs, feature r
 ```
 
 **Key Features:**
-- **Universal requirements** - All tickets MUST include Security Level: Red Hat Employee and label: ai-generated-jira
-- **Smart defaults** - Project and team-specific conventions applied automatically
+- **Universal requirements** - All tickets MUST include label: ai-generated-jira
+- **Smart defaults** - Project and team-specific conventions applied automatically (including security level from global config or template)
 - **Interactive templates** - Guides you through user story format, acceptance criteria, bug templates
 - **Security validation** - Scans for credentials and secrets before submission
+- **Security workflow** - Prompts for global security default on first use, supports template overrides
 - **Extensible** - Supports project-specific and team-specific skills for custom workflows
 - **Hybrid workflow** - Required fields as arguments, optional fields as interactive prompts
 
@@ -219,8 +249,6 @@ Different projects may have different conventions (security levels, labels, vers
 **Team-Specific Conventions:**
 
 Teams may have additional conventions layered on top of project conventions (component selection, custom fields, workflows, etc.). The command automatically detects team context and applies team-specific skills.
-
-See [commands/create.md](commands/create.md) for full documentation.
 
 ---
 
@@ -331,6 +359,38 @@ Automate the process of updating weekly status summaries for Jira issues with in
 
 See [commands/update-weekly-status.md](commands/update-weekly-status.md) for full documentation.
 
+## Available Templates
+
+The Jira plugin includes templates for consistent issue creation.
+
+**Common templates** (work with any project):
+- `common-story` - User stories with acceptance criteria
+- `common-epic` - Epics with scope and timeline
+- `common-bug` - Bug reports with reproduction steps
+- `common-spike` - Research and investigation
+- `common-task` - Technical work and operational tasks
+- `common-feature` - Strategic features with market analysis
+
+**Product-specific templates:**
+- Templates for OCPBUGS, RHEL, and other product organizations
+- Includes specialized bug formats and feature request workflows
+
+**Team-specific templates:**
+- Teams can publish custom templates (e.g., `ocpedge-spike` demonstrates OCPEDGE team format)
+
+**Usage:**
+```bash
+# List all available templates
+/jira:template list
+
+# Create issue with specific template
+/jira:create story MYPROJECT "My Story" --template common-story
+
+# Create your own template
+/jira:template create my-custom-template
+```
+
+See [Template Documentation](templates/README.md) for creating custom templates.
 ---
 
 ## Troubleshooting
