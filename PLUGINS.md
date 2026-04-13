@@ -23,6 +23,7 @@ This document lists all available Claude Code plugins and their commands in the 
 - [Openshift](#openshift-plugin)
 - [Openshift Tls Profile](#openshift-tls-profile-plugin)
 - [Ote Migration](#ote-migration-plugin)
+- [Quarterly Connection](#quarterly-connection-plugin)
 - [Rds Analyzer](#rds-analyzer-plugin)
 - [Snowflake](#snowflake-plugin)
 - [Sosreport](#sosreport-plugin)
@@ -301,6 +302,15 @@ Automate OpenShift Tests Extension (OTE) migration for component repositories
 - **`/ote-migration:migrate`** - Automate OpenShift Tests Extension (OTE) migration for component repositories
 
 See [plugins/ote-migration/README.md](plugins/ote-migration/README.md) for detailed documentation.
+
+### Quarterly Connection Plugin
+
+Build quarterly accomplishment summaries with dense formatting and competency mapping
+
+**Commands:**
+- **`/quarterly-connection:build` `[role] [start-date] [end-date]`** - Build quarterly accomplishment summaries with dense formatting and competency mapping
+
+See [plugins/quarterly-connection/README.md](plugins/quarterly-connection/README.md) for detailed documentation.
 
 ### Rds Analyzer Plugin
 
