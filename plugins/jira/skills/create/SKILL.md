@@ -34,6 +34,10 @@ Also load [Markdown for Jira](../../reference/markdown-for-jira.md) for descript
 - **--component** *(optional)* — Component name. Auto-detected from summary for known projects.
 - **--version** *(optional)* — Target version. Normalized to `openshift-X.Y` per project conventions.
 - **--parent** *(optional)* — Parent issue key for linking (e.g., `CNTRLPLANE-123`).
+- **--template** *(optional)* — Template name to use (e.g., `common-bug`, `ocpedge-spike`). Forces template mode.
+- **--overrides** *(optional)* — Path to template overrides file.
+- **--priority** *(optional)* — Priority level (e.g., `High`, `Medium`, `Low`).
+- **--security-level** *(optional)* — Security level name (e.g., `Red Hat Employee`).
 
 ## Implementation Phases
 
@@ -42,11 +46,74 @@ Also load [Markdown for Jira](../../reference/markdown-for-jira.md) for descript
 1. Load the type-specific reference file from the table above
 2. Invoke the `jira:jira-conventions` skill when the project key, component, or summary keywords match a known project or team
 
+### Phase 1.5: Mode Selection
+
+**Determine whether to use Template Mode or Reference Mode:**
+
+1. **Check for explicit template flag:**
+   - If `--template` provided: **mode = TEMPLATE**
+   - Template name specified in flag (e.g., `--template common-bug`)
+   
+2. **Check for auto-selectable template:**
+   - If no `--template` flag, check if template exists for project+type:
+     - First check: `plugins/jira/templates/{project}/{type}.yaml`
+     - Fallback check: `plugins/jira/templates/common/{type}.yaml`
+   - If template found:
+     ```
+     Template available: {template-name}
+     Use template workflow? (Y/n)
+     ```
+   - If user responds `Y` or `y` or just Enter: **mode = TEMPLATE**
+   - If user responds `N` or `n`: **mode = REFERENCE**
+   
+3. **No template available:**
+   - **mode = REFERENCE** (upstream behavior)
+
+**Branch based on mode:**
+
+- **TEMPLATE Mode** → Invoke `template-engine` skill (see Phase 1.5T below)
+- **REFERENCE Mode** → Continue with Phase 2 (existing upstream workflow)
+
+### Phase 1.5T: Template Mode (Template Engine Invocation)
+
+When mode = TEMPLATE, invoke the `template-engine` skill:
+
+```
+Use the template-engine skill to create a {type} issue in {project-key}.
+
+Template: {template-name}
+Summary: {summary}
+Flags: {all command-line flags}
+
+The template-engine will:
+1. Load and validate the template YAML
+2. Load type-specific reference file for prose guidance
+3. Load educational docs (if template.documentation field exists)
+4. Apply template defaults and project conventions
+5. Collect placeholder values interactively with validation
+6. Render description from template
+7. Return structured issue data
+
+Once template-engine returns the issue data, proceed to Phase 7 (Security Validation) then Phase 8 (MCP Creation).
+```
+
+**After template-engine completes**, you will receive:
+- `summary` (possibly modified during validation)
+- `description` (rendered from template)
+- `fields` (components, versions, custom fields)
+- `labels`, `priority`, `security`
+
+Skip Phases 2-6 and proceed directly to Phase 7 (Security Validation).
+
 ### Phase 2: Parse Arguments & Detect Context
+
+**NOTE: This phase only runs in REFERENCE mode.**
 
 Parse required and optional arguments. Analyze summary text for context clues (team, component, platform keywords).
 
 ### Phase 3: Apply Smart Defaults
+
+**NOTE: This phase only runs in REFERENCE mode.**
 
 **Universal requirements (ALL tickets):**
 
@@ -60,9 +127,13 @@ Project and team defaults (version, component, labels) come from the `jira-conve
 
 ### Phase 4: Interactive Prompts
 
+**NOTE: This phase only runs in REFERENCE mode.**
+
 Follow the type-specific reference file's interactive workflow to collect missing information (story format, bug template sections, epic scope, etc.).
 
 ### Phase 5: Summary Validation
+
+**NOTE: This phase only runs in REFERENCE mode.**
 
 Check for anti-patterns before creation:
 
@@ -80,7 +151,9 @@ Suggested: "Enable ImageTagMirrorSet configuration in HostedCluster CRs"
 Use the suggested summary? (yes/no/edit)
 ```
 
-### Phase 6: Security Validation
+### Phase 6: Security Validation (REFERENCE mode only)
+
+**NOTE: This phase only runs in REFERENCE mode.** (Template mode handles security validation in template-engine)
 
 Scan all content (summary, description) for sensitive data:
 
@@ -92,9 +165,13 @@ If detected: STOP creation, inform user of the type found (without echoing it), 
 
 ### Phase 7: Create Issue via MCP
 
+**NOTE: This phase runs in BOTH modes** (after template-engine returns data in TEMPLATE mode, or after Phase 6 in REFERENCE mode).
+
 Use `createJiraIssue` with collected parameters. Include universal fields and any project/team-specific fields.
 
 ### Phase 8: Return Result
+
+**NOTE: This phase runs in BOTH modes.**
 
 ```plaintext
 Created: PROJECT-1234
