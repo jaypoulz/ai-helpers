@@ -4,6 +4,35 @@ Build quarterly accomplishment summaries with dense formatting and Red Hat compe
 
 **⚠️ CRITICAL: This tool ORGANIZES and MAPS accomplishments. It does NOT evaluate what role you deserve or assess promotion readiness. It is a mapping tool, NOT an evaluation tool.**
 
+## Key Concepts
+
+### Quality Over Quantity
+
+This tool prefers **fewer accomplishments with strong evidence** over many weak ones:
+
+- **Target:** 15-25 high-quality bullets (not 50+)
+- **Evidence scoring:** 0-10 scale based on verifiability
+  - **High (8-10):** Multiple evidence types (PR + Jira + doc), quantified impact, cross-team
+  - **Medium (5-7):** Single evidence type, described impact, team-internal
+  - **Low (0-4):** No verifiable deliverable, vague impact, self-reported only
+- **Filtering:** Include all High Evidence items, selective Medium Evidence, exclude Low Evidence by default
+
+### Automatic .daily/ Integration
+
+If you maintain a `.daily/` directory (compatible with todo skills), the tool automatically scans it:
+
+- Looks for `YYYY-MM-DD.md`, `*-jira.md`, `*-accomplishment.md`, `*-doc.md`, `*-email.md`, `*-slack.md`
+- Extracts Jira references, PR links, document URLs, and summaries
+- **Benefits:** Real-time logging is more accurate than retrospective memory
+- **Evidence boost:** Items logged contemporaneously score higher (stronger evidence)
+
+**Example .daily/ entry:**
+```markdown
+# 2026-02-15.md
+- Fixed cluster consensus bug [PR#789](https://github.com/org/backend/pull/789) for PROJ-101
+- Met with platform team about health API design - action items in [design doc](https://docs.example.com/...)
+```
+
 ## Commands
 
 ### `/quarterly-connection:build`
@@ -29,11 +58,14 @@ Build a comprehensive quarterly accomplishment summary by gathering data from mu
 - `SDE` - Senior Distinguished Engineer
 
 **Features:**
+- **Automatic .daily/ scanning:** Reads todo/daily log files for contemporaneous accomplishment tracking
+- **Evidence strength scoring:** Prefers fewer high-quality items (8-10/10) over many weak ones
 - **Sequential prompting:** Guides you through data sources ONE AT A TIME (Workday Goals → Jira → GitHub → Google Drive → Email → Slack → Other)
 - **Smart link collection:** After data gathering, reads each document and prompts for public links
 - **Opinionated directory structure:** `.work/quarterly-connection/inputs/` with organized subdirectories
 - **Automatic queries:** GitHub PRs and Jira API (if configured)
 - **Deduplication:** Combines Jira+PR for same work
+- **Quality over quantity:** Target 15-25 strong accomplishments (not 50+ weak ones)
 - **Dense formatting:** No fluff, facts only
 - **Full URLs:** Readable link text for all references
 - **Competency mapping:** Red Hat v10.6 framework

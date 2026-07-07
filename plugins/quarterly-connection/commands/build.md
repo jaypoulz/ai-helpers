@@ -161,19 +161,44 @@ The command processes accomplishments using this pattern:
      - `inputs/README.md` - Instructions for gathering data
      - `outputs/README.md` - Explanation of generated files
 
-4. **Sequential Data Gathering (ONE SOURCE AT A TIME)**
+4. **Automatic Data Scanning (.daily/ directory)**
 
-   **Step 4a: Workday Goals and Development Items**
+   **Step 4a: Check for .daily/ directory (AUTOMATIC)**
+   - Check if `.daily/` directory exists in current working directory
+   - If exists, scan for files matching the date range
+   - **File patterns to look for:**
+     - `YYYY-MM-DD.md` or `YYYY-MM-DD.txt` - Daily log entries
+     - `*-jira.md` or `*-jira.txt` - Jira updates saved during the quarter
+     - `*-accomplishment.md` - Saved accomplishments
+     - `*-doc.md` - Document updates
+     - `*-email.md` or `*-email.txt` - Email thread summaries
+     - `*-slack.md` or `*-slack.txt` - Slack thread summaries
+   - Parse files and extract:
+     - Jira issue references (PROJ-123 patterns)
+     - PR references (#123 or full URLs)
+     - Document links (Google Docs, Confluence, etc.)
+     - Email/Slack summaries with context
+   - Store in `inputs/daily-logs/` (auto-created subdirectory)
+   - **Benefits:**
+     - Captures work logged in real-time during the quarter
+     - More accurate than retrospective memory
+     - Already includes context and links
+     - Reduces manual data gathering burden
+   - **Output to user:** "Found X files in .daily/ directory from [start-date] to [end-date]. Extracted Y Jira issues, Z PRs, and W documents."
+
+5. **Sequential Data Gathering (ONE SOURCE AT A TIME)**
+
+   **Step 5a: Workday Goals and Development Items**
    - Prompt: "First, let's gather your Workday goals and development items. This provides critical context for your professional development. Go to Workday and copy your goals and development items for this quarter, then save as a .txt or .md file to `inputs/additional/workday-goals.txt`. Type 'done' when ready."
    - Wait for user confirmation
    - **Why first:** Goals set context for what you were supposed to accomplish this quarter
 
-   **Step 4b: Jira Data**
+   **Step 5b: Jira Data**
    - Prompt: "Let's gather Jira data. Export closed issues assigned to you from [start-date] to [end-date] (CSV or JSON) and save .txt or .md files to `inputs/jira-exports/`. Type 'done' when ready."
    - Wait for user confirmation
    - Attempt automatic Jira API query if MCP configured
 
-   **Step 4c: GitHub Data and Jira Cross-Reference**
+   **Step 5c: GitHub Data and Jira Cross-Reference**
    - Prompt: "Now let's gather GitHub data. I'll automatically query your merged PRs and extract any Jira references. Type 'done' to continue."
    - **GitHub query (PRIORITIZE PRs, NOT COMMITS):**
      - Search PRs merged in date range: `author:[username] merged:[start-date]..[end-date]`
@@ -202,7 +227,7 @@ The command processes accomplishments using this pattern:
      - Validates Jira issues are actually your work and in the time window
    - Wait for user confirmation
 
-   **Step 4d: Google Drive Data**
+   **Step 5d: Google Drive Data**
    - Prompt: "Let's gather Google Drive docs. In Google Drive, search for 'Owned by me' and filter by 'Last modified' from [start-date] to today (not [end-date] - you may have updated docs after the quarter ended). Save design docs, proposals, strategy docs, and meeting notes as .txt or .md files to `inputs/google-docs/`. Type 'done' when ready."
    - Wait for user confirmation
    - **Search tips:**
@@ -210,7 +235,7 @@ The command processes accomplishments using this pattern:
      - Ensures you don't miss docs updated after the quarter ended
      - Look for docs you created or significantly contributed to
 
-   **Step 4e: Email Data**
+   **Step 5e: Email Data**
    - Prompt: "Let's gather email threads. In Gmail, search for 'in:sent -\"From Google Calendar\"' and filter by date range [start-date] to [end-date]. This shows emails you sent (excluding calendar invites). Save important threads (cross-team coordination, customer engagement, technical decisions) as .eml, .txt, or .md files to `inputs/emails/`. Type 'done' when ready."
    - Wait for user confirmation
    - **Search tips:**
@@ -223,7 +248,7 @@ The command processes accomplishments using this pattern:
      - `.txt` - Plain text copy/paste
      - `.md` - Markdown formatted
 
-   **Step 4f: Slack Data**
+   **Step 5f: Slack Data**
    - Prompt: "Let's gather Slack threads. In Slack, search for `from:@your-username after:[day-before-start] before:[day-after-end]` (replace @your-username with your Slack handle, e.g., from:@username). For quarter [start-date] to [end-date], use after:[day-before-start] before:[day-after-end] to ensure inclusive date range. Then refine with these optional filters:
      - Add `has:thread` to find threads you started (leadership)
      - Add `has::emoji:` to find messages with reactions (high impact)
@@ -239,7 +264,7 @@ The command processes accomplishments using this pattern:
      - Look in team channels, cross-functional channels, incident channels
    - **Future enhancement:** Slack API integration for automatic retrieval
 
-   **Step 4g: Additional Data**
+   **Step 5g: Additional Data**
    - Prompt: "Finally, add any other accomplishments not captured above. Save freeform accomplishments as .txt or .md files to `inputs/additional/`. Type 'done' when ready."
    - Wait for user confirmation
 
@@ -315,14 +340,86 @@ The command processes accomplishments using this pattern:
 
 8. **Combining & Deduplication**
    - Match Jira issues to PRs by:
-     - JIRA-ID in PR title or body (already extracted in Step 4c)
+     - JIRA-ID in PR title or body (already extracted in Step 5c)
      - Similar work descriptions
    - Combine matched items into single accomplishment
    - Preserve all URLs (both PR and Jira links)
    - **GitHub-extracted Jiras automatically linked to their source PRs**
    - Result: Single bullet with `[PR#123](URL), [PROJ-456](URL)` for same work
 
-9. **Format Application** - Transform to dense format:
+9. **Evidence Strength Scoring (QUALITY OVER QUANTITY)**
+
+   **Purpose:** Prefer fewer accomplishments with strong evidence over many weak ones
+   
+   **Scoring Criteria (0-10 scale):**
+   
+   **High Evidence (8-10 points):**
+   - ✅ **Verifiable deliverable** - PR merged, Jira resolved, document published
+   - ✅ **Multiple evidence types** - Both PR AND Jira, or PR + document, or Jira + email thread
+   - ✅ **Clear business impact** - Quantified (5 bugs, 30% faster) or explicit capability (enables X)
+   - ✅ **Cross-team or customer-facing** - Evidence of collaboration beyond your immediate team
+   - ✅ **Logged in real-time** - Found in .daily/ directory (contemporaneous, not retrospective)
+   - **Examples:**
+     - PR#123 + JIRA-456 + design doc → 10 points
+     - PR#789 fixing 5 customer-reported bugs → 9 points
+     - Jira epic + email thread with customer + delivery confirmation → 9 points
+   
+   **Medium Evidence (5-7 points):**
+   - ⚠️ **Single evidence type** - PR only, Jira only, or document only
+   - ⚠️ **Impact described but not quantified** - "Improved performance" vs "30% faster"
+   - ⚠️ **Team-internal work** - No evidence of cross-team collaboration
+   - ⚠️ **Retrospectively added** - Not found in .daily/, manually entered after the fact
+   - **Examples:**
+     - PR#456 with clear description but no Jira → 6 points
+     - Jira ticket resolved but no PR link → 5 points
+     - Email thread about planning with no deliverable → 5 points
+   
+   **Low Evidence (0-4 points):**
+   - ❌ **No verifiable deliverable** - "Helped with X" but no PR/Jira/doc
+   - ❌ **Vague impact** - "Improved things" or "Worked on feature"
+   - ❌ **Self-reported only** - No external validation (no Jira, no PR, no doc)
+   - ❌ **Cannot verify time range** - No date stamps, unclear when work happened
+   - **Examples:**
+     - "Helped debug issue" with no PR or Jira → 2 points
+     - "Worked on performance" with no measurable outcome → 1 point
+     - "Participated in meetings" with no decisions documented → 1 point
+   
+   **Filtering Strategy:**
+   1. Score all accomplishments using the criteria above
+   2. **Tier 1 (Priority):** Include all High Evidence items (8-10 points)
+   3. **Tier 2 (Selective):** Review Medium Evidence items (5-7 points)
+      - Include if they demonstrate a competency not well-represented in Tier 1
+      - Include if they align with Workday goals
+      - Skip if redundant with higher-scoring items
+   4. **Tier 3 (Exclude by default):** Low Evidence items (0-4 points)
+      - Only include if user explicitly confirms and can add evidence
+      - Prompt user: "Found these low-evidence items. Can you add links/details?"
+   
+   **Quality Threshold:**
+   - Target: 15-25 high-quality bullets (not 50+ weak bullets)
+   - Prefer 3 well-documented accomplishments over 10 vague ones
+   - Each bullet should have:
+     - At least one verifiable link (PR, Jira, or document URL)
+     - Clear, quantified impact (or explicit capability enabled)
+     - Specific details (not generic descriptions)
+   
+   **Benefits:**
+   - Stronger performance review narrative
+   - Easier for reviewers to validate claims
+   - More credible and compelling
+   - Reduces noise and focuses on impact
+   
+   **Output to user:**
+   ```
+   Evidence Strength Report:
+   - High Evidence (8-10): 18 accomplishments
+   - Medium Evidence (5-7): 12 accomplishments (7 included, 5 skipped as redundant)
+   - Low Evidence (0-4): 8 accomplishments (excluded - no verifiable deliverables)
+   
+   Final count: 25 accomplishments with strong evidence
+   ```
+
+11. **Format Application** - Transform to dense format:
    - Use past tense action verb (no adverbs)
    - State deliverable (no adjectives unless quantitative)
    - **Include readable link text: [PR#123](URL), [JIRA-456](URL), [Doc Name](URL)**
@@ -330,7 +427,7 @@ The command processes accomplishments using this pattern:
    - State impact with "to" or "enabling"
    - Remove: "successfully", "effectively", "comprehensive", "thorough", "carefully"
 
-10. **Quality Checks**
+11. **Quality Checks**
    - Remove all unnecessary adjectives/adverbs
    - Verify one sentence per bullet
    - Confirm facts over emphasis
@@ -338,14 +435,14 @@ The command processes accomplishments using this pattern:
    - **Verify all references use readable link text**
    - Map to Red Hat competencies demonstrated
 
-11. **Competency Mapping (ORGANIZATION ONLY, NOT EVALUATION)**
+12. **Competency Mapping (ORGANIZATION ONLY, NOT EVALUATION)**
    - Identify which competencies each accomplishment demonstrates
    - Group accomplishments by competencies relevant to user's CURRENT role
    - **DO NOT** assess whether accomplishments are "sufficient" for the role
    - **DO NOT** suggest what level the accomplishments represent
    - **ONLY** organize by competency categories expected for the role
 
-12. **Link Validation (CRITICAL QUALITY CONTROL)**
+13. **Link Validation (CRITICAL QUALITY CONTROL)**
    - **Purpose:** Verify every link in every bullet is accurate, authored by user, within time range, and directly tied to the accomplishment
    - **Process:**
      1. Extract all formatted accomplishment bullets (from both Top 3 and Other Accomplishments)
@@ -391,7 +488,7 @@ The command processes accomplishments using this pattern:
      - Log any removed/corrected links for transparency with reason (wrong author, wrong date, etc.)
    - **Output:** Clean, verified bullets with 100% accurate, user-authored, time-appropriate links
 
-12.5 **PR Number Collection Enhancement**
+13.5 **PR Number Collection Enhancement**
    - **Purpose:** Ensure PR numbers are collected, not just commit hashes
    - **Process:**
      1. For each repository with commits in the quarter:
@@ -417,7 +514,7 @@ The command processes accomplishments using this pattern:
      - Easier to verify in GitHub UI
    - **Fallback:** If git history unavailable, use commit hashes with note
 
-13. **Thematic Review**
+14. **Thematic Review**
    - **Purpose:** Ensure all major themes of work are represented in the report
    - **Process:**
      1. Generate initial competency distribution analysis:
@@ -452,7 +549,7 @@ The command processes accomplishments using this pattern:
      - Strategic work (AI tools, mentorship) often lives in Slack/email, not Jira
      - User knows which competencies matter for their role/goals
 
-14. **Association Validation**
+15. **Association Validation**
    - **Purpose:** Ensure PR/Jira tickets are correctly associated with accomplishment descriptions
    - **Process:**
      1. Generate association report showing all PR/Jira links per bullet:
@@ -478,7 +575,7 @@ The command processes accomplishments using this pattern:
      - Catches work that was reverted or superseded
      - Ensures accomplishment descriptions match actual PR/Jira content
 
-15. **Unlisted Work Review**
+16. **Unlisted Work Review**
    - **Purpose:** Surface work from inputs that didn't make it into bullets
    - **Process:**
      1. Compare collected inputs against generated bullets:
@@ -516,7 +613,7 @@ The command processes accomplishments using this pattern:
      - Tooling improvements (like quarterly-connection plugin!) are easy to miss
      - NO-JIRA commits can represent significant technical work
 
-16. **Document Link Review**
+17. **Document Link Review**
    - **Purpose:** Ensure all important documents have public links in bullets
    - **Process:**
      1. List all Google Docs from inputs with their public links:
@@ -550,7 +647,7 @@ The command processes accomplishments using this pattern:
      - Links make work verifiable and add credibility
      - But not all documents should be public (sensitive info, drafts)
 
-17. **Output**
+18. **Output**
    - Files saved to `.work/quarterly-connection/outputs/` directory (gitignored)
    - **Primary:** `q[N]-[year]-accomplishments-workday.html`
    - **Secondary:** `q[N]-[year]-accomplishments-workday.md`
@@ -576,7 +673,7 @@ The command processes accomplishments using this pattern:
      - Importance hierarchy applied to organization
      - **NO level indicators or promotion readiness assessments**
 
-18. **Review**
+19. **Review**
    - Display file paths
    - Show accomplishment count by source (Jira, GitHub, Google Docs, Email, Slack, Additional)
    - Note transformations applied
@@ -678,7 +775,7 @@ Map accomplishments using v10.6 framework: **1 Responsibility + 1 Skill per bull
 7. **Business impact** - How technical work creates business value
 8. **Continuous Learning** - Staying current with technologies
 9. **Influence** - Ability to persuade and drive technical direction
-10. **Knowledge Sharing** - Documentation, presentations, teaching
+11. **Knowledge Sharing** - Documentation, presentations, teaching
 
 **Mapping Guide (Responsibility + Skill) - CATEGORIZATION ONLY:**
 - Bug fixes → Own and Deliver Business Impact + Business impact
