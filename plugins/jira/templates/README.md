@@ -302,6 +302,231 @@ Templates outside `user/` **MUST** have:
 /jira:template create-from ocpedge-story
 ```
 
+## Hybrid Approach: Templates + Reference Files + Conventions
+
+The Jira plugin uses a **hybrid approach** that combines three complementary systems to provide the best issue creation experience:
+
+### Three Complementary Systems
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Templates     │    │  Reference      │    │  Conventions    │
+│   (YAML)        │    │  Files (MD)     │    │  (Skills)       │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ Structure       │    │ Prose Guidance  │    │ Project Rules   │
+│ Validation      │    │ Examples        │    │ Custom Fields   │
+│ Fields          │    │ Best Practices  │    │ Labels/Versions │
+│ Defaults        │    │ Anti-patterns   │    │ Component Lists │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ↓                      ↓                      ↓
+         └──────────────────────┴───────────────────────┘
+                                ↓
+                    Enriched Interactive Prompts
+```
+
+### 1. Templates (YAML) - Structure and Validation
+
+**What templates provide:**
+- **Structured fields** with types (text, multiline, list)
+- **Validation rules** (required, min/max length, patterns)
+- **Default values** and suggestions
+- **Template inheritance** for reusability
+
+**Example from `common/bug.yaml`:**
+```yaml
+placeholders:
+  - name: problem_description
+    description: "Clear, detailed description of the problem"
+    required: true
+    type: multiline
+    validation:
+      min_length: 20
+      max_length: 2000
+```
+
+**Benefits:**
+- Enforces required fields
+- Validates input before creation
+- Consistent structure across team
+- Programmatic processing
+
+### 2. Reference Files (Markdown) - Prose Guidance
+
+**What reference files provide:**
+- **Summary guidelines** with good/bad examples
+- **Interactive workflow descriptions** (what to ask, in what order)
+- **Best practices and anti-patterns**
+- **Project-specific conventions** (version formats, field handling)
+
+**Example from `reference/create-bug.md`:**
+```markdown
+## Summary Guidelines
+
+Concise (one sentence), identifies the problem clearly.
+
+- Good: "API server returns 500 error when creating namespaces"
+- Bad: "Things are broken"
+
+## 1. Problem Description
+
+**Prompt:** "What is the problem? Describe it clearly and in detail."
+
+Include: context, component affected, impact (who, severity).
+```
+
+**Benefits:**
+- Easy to read and update
+- Natural language guidance
+- Real-world examples
+- Contextual help
+
+### 3. Conventions (Skills) - Project and Team Rules
+
+**What conventions provide:**
+- **Project-specific custom fields** (Epic Link, Target Version, etc.)
+- **Version normalization** (e.g., "4.21" → "openshift-4.21")
+- **Default labels** (project and team labels)
+- **Component suggestions** based on project/team
+- **Field ID mappings** for Red Hat Jira
+
+**Example from `jira-conventions` skill:**
+```python
+# CNTRLPLANE project conventions
+{
+    'custom_fields': {
+        'Epic Link': 'customfield_10014',
+        'Target Version': 'customfield_10855'
+    },
+    'version_format': 'openshift-{major}.{minor}',
+    'default_labels': ['cntrlplane'],
+    'component_suggestions': ['HyperShift', 'Control Plane']
+}
+```
+
+**Benefits:**
+- Project-specific field handling
+- Automatic version formatting
+- Team-specific defaults
+- No hardcoding in templates
+
+### How They Work Together
+
+**When you run `/jira:create bug CNTRLPLANE "API crash"`:**
+
+1. **Template Mode Selected:**
+   ```
+   Template available: common-bug
+   Use template workflow? (Y/n)
+   ```
+
+2. **Resources Loaded:**
+   ```
+   Creating Bug issue for CNTRLPLANE
+   
+   Resources loaded:
+   📋 Template: common-bug (templates/common/bug.yaml)
+      Provides: structure, validation rules, fields
+   
+   📖 Reference: reference/create-bug.md
+      Provides: summary guidelines, workflow, examples
+   
+   🏢 Project: CNTRLPLANE conventions
+      Custom fields: Epic Link, Target Version
+      Default labels: [cntrlplane]
+   ```
+
+3. **Enriched Prompts:**
+   ```
+   Problem Description:
+   [?] (from template) Clear, detailed description of the issue
+       Include context, component affected, impact
+       
+       (from reference) Provide:
+       - What you were trying to do
+       - What component or feature is affected
+       - Who is affected? How severe is it?
+       
+       Examples:
+         - "kube-apiserver crashes after upgrade from 4.20→4.21"
+         - "Login button doesn't respond on iOS devices"
+       
+       See reference/create-bug.md for more examples.
+   
+   >
+   ```
+
+4. **Configuration Merged:**
+   ```python
+   # Template defaults
+   labels: ["ai-generated-jira", "template:common-bug"]
+   
+   # + Project conventions
+   labels: ["ai-generated-jira", "template:common-bug", "cntrlplane"]
+   custom_fields: {
+       "customfield_10855": "openshift-4.21"  # from --version 4.21
+   }
+   
+   # Final merged config used for issue creation
+   ```
+
+### Benefits of Hybrid Approach
+
+**For Users:**
+- ✅ Get structured prompts with validation (templates)
+- ✅ Get helpful examples and guidance (references)
+- ✅ Get project-specific defaults automatically (conventions)
+- ✅ Don't need to remember field IDs or format rules
+
+**For Maintainers:**
+- ✅ Templates: version-controlled, validated, reusable
+- ✅ References: easy to update, natural prose
+- ✅ Conventions: centralized project rules, no duplication
+- ✅ Clear separation of concerns
+
+### Choosing Template vs Reference Mode
+
+**Template Mode** (structured):
+- ✅ Use when you want guided workflow with validation
+- ✅ Use for repeated tasks (team has standards)
+- ✅ Use when learning proper issue format
+- ✅ Gets: template structure + reference examples + conventions
+
+**Reference Mode** (flexible):
+- ✅ Use when no template exists
+- ✅ Use for one-off issues outside normal patterns
+- ✅ Use when you decline template offer
+- ✅ Gets: reference examples + conventions only
+
+**Example workflows:**
+
+```bash
+# Template mode (explicit)
+/jira:create bug OCPBUGS "API crash" --template ocpbugs-bug
+
+# Template mode (auto-offered, you accept)
+/jira:create story CNTRLPLANE "Add metrics"
+> Template available: common-story. Use template? (Y/n)
+> Y
+
+# Reference mode (declined template)
+/jira:create task MYPROJECT "Update docs"
+> Template available: common-task. Use template? (Y/n)  
+> n
+
+# Reference mode (no template available)
+/jira:create task CUSTOMPROJ "Special task"
+> No template available, using reference-guided workflow...
+```
+
+### Documentation Locations
+
+| Resource Type | Location | Purpose |
+|---------------|----------|---------|
+| **Templates** | `plugins/jira/templates/` | YAML structure, validation, inheritance |
+| **References** | `plugins/jira/reference/` | Markdown guidance, examples, best practices |
+| **Conventions** | `plugins/jira/skills/jira-conventions/` | Project/team rules, router skill |
+| **Guides** | `plugins/jira/docs/issue-types/` | Educational content, deep-dive on types |
+
 ## Creating New Templates
 
 1. **Create in user directory:**

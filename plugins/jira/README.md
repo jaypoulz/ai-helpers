@@ -237,43 +237,91 @@ See [commands/generate-test-plan.md](commands/generate-test-plan.md) for full do
 
 ### `/jira:create` - Create Jira Issues
 
-Create well-formed Jira issues (stories, epics, features, tasks, bugs, feature requests) with intelligent defaults, interactive guidance, and validation. The command applies project-specific conventions, suggests components based on context, and provides templates for consistent issue creation.
+Create well-formed Jira issues with **dual-mode workflow**: structured templates with validation (Template Mode) or flexible prose-guided creation (Reference Mode). The command automatically applies project and team conventions.
 
-**Usage:**
+**Basic Usage:**
 ```bash
-# Create a story
+# Auto-selects template if available, prompts you to accept
 /jira:create story MYPROJECT "Add user dashboard"
 
-# Create a story with options
-/jira:create story MYPROJECT "Add search functionality" --component "Frontend" --version "2.5.0"
+# Explicit template mode
+/jira:create bug OCPBUGS "API crash" --template ocpbugs-bug
 
-# Create an epic with parent
-/jira:create epic MYPROJECT "Mobile application redesign" --parent MYPROJECT-100
+# With options
+/jira:create story CNTRLPLANE "Add metrics" --component "HyperShift" --version "4.21"
+```
 
-# Create a bug
-/jira:create bug MYPROJECT "Login button doesn't work on mobile"
+**Dual-Mode Workflow:**
 
-# Create a bug with component
-/jira:create bug MYPROJECT "API returns 500 error" --component "Backend"
+The command supports two complementary modes:
 
-# Create a task
-/jira:create task MYPROJECT "Update API documentation" --parent MYPROJECT-456
+**🎯 Template Mode** (Structured):
+- Uses YAML templates with field validation
+- Provides structured prompts with examples
+- Enforces required fields and formats
+- Combines template structure + reference examples + project conventions
+- **When:** Template exists and you accept offer, or use `--template` flag
+- **Best for:** Repeated tasks, learning proper format, team standards
 
-# Create a feature
-/jira:create feature MYPROJECT "Advanced search capabilities"
+**📖 Reference Mode** (Flexible):
+- Uses markdown reference files with prose guidance
+- Provides examples and best practices
+- Flexible workflow without strict validation
+- Combines reference examples + project conventions
+- **When:** No template available, or you decline template offer
+- **Best for:** One-off issues, custom scenarios, quick creation
 
-# Create a feature request
-/jira:create feature-request RFE "Support custom SSL certificates for ROSA HCP"
+**Mode Selection:**
+```bash
+# Command detects available template and prompts:
+/jira:create story CNTRLPLANE "Add dashboard"
+> Template available: common-story
+> Use template workflow? (Y/n)
+
+# Accept (Y) → Template Mode (structured)
+# Decline (n) → Reference Mode (flexible)
+
+# Force template mode:
+/jira:create story CNTRLPLANE "Add dashboard" --template common-story
+
+# No template available → automatically uses Reference Mode
+```
+
+**Example Workflows:**
+
+```bash
+# Template mode with full options
+/jira:create bug OCPBUGS "kube-apiserver crashes" \
+  --template ocpbugs-bug \
+  --component "kube-apiserver" \
+  --version "4.21" \
+  --priority "High"
+
+# Auto-select template (prompted to accept/decline)
+/jira:create story CNTRLPLANE "Add authentication"
+
+# Reference mode (decline template)
+/jira:create task MYPROJECT "Update docs"
+> Template available: common-task. Use template? (Y/n)
+> n
+> Using reference-guided workflow...
+
+# Create with parent linking
+/jira:create epic CNTRLPLANE "Mobile redesign" --parent CNTRLPLANE-100
+
+# Feature request (specific project)
+/jira:create feature-request RFE "Support custom SSL certs for ROSA HCP"
 ```
 
 **Key Features:**
-- **Universal requirements** - All tickets MUST include label: ai-generated-jira
-- **Smart defaults** - Project and team-specific conventions applied automatically (including security level from global config or template)
-- **Interactive templates** - Guides you through user story format, acceptance criteria, bug templates
-- **Security validation** - Scans for credentials and secrets before submission
-- **Security workflow** - Prompts for global security default on first use, supports template overrides
-- **Extensible** - Supports project-specific and team-specific skills for custom workflows
-- **Hybrid workflow** - Required fields as arguments, optional fields as interactive prompts
+- **Dual-mode workflow** - Template (structured) or Reference (flexible)
+- **Auto-detection** - Finds and offers templates automatically
+- **Hybrid guidance** - Templates + Reference examples + Conventions combined
+- **Smart defaults** - Project and team conventions applied automatically
+- **Field validation** - Enforces required fields, lengths, patterns (Template Mode)
+- **Security scanning** - Detects credentials, tokens, secrets before submission
+- **Interactive prompts** - Context-aware questions with examples
+- **Parent linking** - Epic → Feature, Story/Task → Epic relationships
 
 **Supported Issue Types:**
 - `story` - User stories with acceptance criteria
@@ -400,9 +448,12 @@ Automate the process of updating weekly status summaries for Jira issues with in
 
 See [commands/update-weekly-status.md](commands/update-weekly-status.md) for full documentation.
 
-## Available Templates
+## Hybrid System: Templates + References + Conventions
 
-The Jira plugin includes templates for consistent issue creation.
+The Jira plugin uses a **hybrid approach** combining three complementary systems:
+
+### 1. Templates (Structured YAML)
+Provide field structure, validation rules, and defaults.
 
 **Common templates** (work with any project):
 - `common-story` - User stories with acceptance criteria
@@ -413,25 +464,107 @@ The Jira plugin includes templates for consistent issue creation.
 - `common-feature` - Strategic features with market analysis
 
 **Product-specific templates:**
-- Templates for OCPBUGS, RHEL, and other product organizations
-- Includes specialized bug formats and feature request workflows
+- `ocpbugs-bug` - OCPBUGS bug format with product fields
+- `rhel-bug` - RHEL bug template
+- `osdocs-bug` - OpenShift documentation bugs
+- `rfe` - Feature requests (RFE project)
 
 **Team-specific templates:**
-- Teams can publish custom templates (e.g., `ocpedge-spike` demonstrates OCPEDGE team format)
+- `ocpedge-spike` - OCPEDGE team spike format
 
-**Usage:**
+### 2. Reference Files (Markdown Guidance)
+Provide prose guidance, examples, and best practices.
+
+Located in `plugins/jira/reference/`:
+- `create-story.md` - Story format, user story structure, acceptance criteria
+- `create-bug.md` - Bug template, reproduction steps, version fields
+- `create-epic.md` - Epic Name field, scope/timeline, parent linking
+- `create-task.md` - Task vs story distinction, action-verb summaries
+- `create-feature.md` - Market problem, strategic value, success criteria
+- `create-feature-request.md` - RFE workflow, business requirements
+
+### 3. Conventions (Project/Team Rules)
+Apply project-specific custom fields, labels, and version formats.
+
+**Supported projects:**
+- **CNTRLPLANE** - Control plane features, epics, stories
+- **OCPBUGS** - OpenShift bugs
+- **GCP** - GCP Hosted Control Planes (HyperShift on GKE)
+
+**Supported teams:**
+- **HyperShift** - Component selection, team labels
+- **GCP HCP** - GCP project conventions, sizing guides
+
+### How They Work Together
+
+```
+Template Mode:
+  Templates (structure + validation)
+     + Reference files (examples + guidance)  
+     + Conventions (project rules)
+     = Enriched interactive prompts
+
+Reference Mode:
+  Reference files (examples + guidance)
+     + Conventions (project rules)
+     = Flexible prose-guided workflow
+```
+
+**Example:** Creating a bug for OCPBUGS with Template Mode:
+
+1. **Template** (`ocpbugs-bug.yaml`) provides:
+   - Field structure (problem_description, steps, version, etc.)
+   - Validation (min/max length, required fields)
+   - Defaults (labels, format)
+
+2. **Reference** (`create-bug.md`) provides:
+   - Summary guidelines with good/bad examples
+   - Interactive workflow descriptions
+   - Best practices and anti-patterns
+
+3. **Conventions** (OCPBUGS project) provides:
+   - Custom field IDs (Target Version, Epic Link)
+   - Version normalization ("4.21" → "openshift-4.21")
+   - Default labels and security level
+
+4. **Result**: Enriched prompts with:
+   ```
+   Problem Description:
+   [?] (template) Clear, detailed description
+       (reference) Include: what, component, impact, when
+       (reference) Examples:
+         - "kube-apiserver crashes after upgrade..."
+       See reference/create-bug.md for more.
+   ```
+
+### Template Management
+
 ```bash
 # List all available templates
 /jira:template list
 
 # Create issue with specific template
-/jira:create story MYPROJECT "My Story" --template common-story
+/jira:create bug OCPBUGS "API crash" --template ocpbugs-bug
 
 # Create your own template
 /jira:template create my-custom-template
+
+# Create from existing template
+/jira:template create-from ocpedge-spike
+
+# Show template details
+/jira:template show common-bug
+
+# Validate template
+/jira:template validate my-custom-template
 ```
 
-See [Template Documentation](templates/README.md) for creating custom templates.
+**See [Template Documentation](templates/README.md) for:**
+- Template inheritance and overrides
+- Creating custom templates
+- Template schema reference
+- Hybrid approach details
+
 ---
 
 ## Troubleshooting
