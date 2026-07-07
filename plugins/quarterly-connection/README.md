@@ -10,12 +10,12 @@ Build quarterly accomplishment summaries with dense formatting and Red Hat compe
 
 This tool prefers **fewer accomplishments with strong evidence** over many weak ones:
 
-- **Target:** 15-25 high-quality bullets (not 50+)
+- **Target:** 5-10 medium to high evidence bullets (not 50+)
 - **Evidence scoring:** 0-10 scale based on verifiability
   - **High (8-10):** Multiple evidence types (PR + Jira + doc), quantified impact, cross-team
   - **Medium (5-7):** Single evidence type, described impact, team-internal
   - **Low (0-4):** No verifiable deliverable, vague impact, self-reported only
-- **Filtering:** Include all High Evidence items, selective Medium Evidence, exclude Low Evidence by default
+- **Filtering:** Focus on High Evidence items, selective Medium Evidence for competency gaps, exclude Low Evidence
 
 ### Automatic .daily/ Integration
 
@@ -65,7 +65,7 @@ Build a comprehensive quarterly accomplishment summary by gathering data from mu
 - **Opinionated directory structure:** `.work/quarterly-connection/inputs/` with organized subdirectories
 - **Automatic queries:** GitHub PRs and Jira API (if configured)
 - **Deduplication:** Combines Jira+PR for same work
-- **Quality over quantity:** Target 15-25 strong accomplishments (not 50+ weak ones)
+- **Quality over quantity:** Target 5-10 medium to high evidence accomplishments (not 50+ weak ones)
 - **Dense formatting:** No fluff, facts only
 - **Full URLs:** Readable link text for all references
 - **Competency mapping:** Red Hat v10.6 framework

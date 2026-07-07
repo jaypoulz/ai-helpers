@@ -396,27 +396,29 @@ The command processes accomplishments using this pattern:
       - Prompt user: "Found these low-evidence items. Can you add links/details?"
    
    **Quality Threshold:**
-   - Target: 15-25 high-quality bullets (not 50+ weak bullets)
-   - Prefer 3 well-documented accomplishments over 10 vague ones
+   - Target: 5-10 medium to high evidence bullets (not 50+ weak bullets)
+   - Prefer 5 well-documented accomplishments over 30 vague ones
    - Each bullet should have:
      - At least one verifiable link (PR, Jira, or document URL)
      - Clear, quantified impact (or explicit capability enabled)
      - Specific details (not generic descriptions)
+   - **Focus on your most impactful work** - the highlights that best represent your quarter
    
    **Benefits:**
    - Stronger performance review narrative
    - Easier for reviewers to validate claims
    - More credible and compelling
    - Reduces noise and focuses on impact
+   - Forces prioritization of what truly matters
    
    **Output to user:**
    ```
    Evidence Strength Report:
-   - High Evidence (8-10): 18 accomplishments
-   - Medium Evidence (5-7): 12 accomplishments (7 included, 5 skipped as redundant)
-   - Low Evidence (0-4): 8 accomplishments (excluded - no verifiable deliverables)
+   - High Evidence (8-10): 6 accomplishments
+   - Medium Evidence (5-7): 8 accomplishments (3 included for competency coverage, 5 skipped as redundant)
+   - Low Evidence (0-4): 12 accomplishments (excluded - no verifiable deliverables)
    
-   Final count: 25 accomplishments with strong evidence
+   Final count: 9 accomplishments with strong evidence
    ```
 
 11. **Format Application** - Transform to dense format:
