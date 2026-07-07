@@ -63,6 +63,188 @@ Instead of hardcoding workflows for each issue type, this skill:
 
 **Key Change:** Template-engine now loads BOTH templates and reference files for a hybrid approach.
 
+## Detailed Implementation Steps
+
+### Step 1: Parse Command Arguments
+
+Extract from the create router invocation:
+- `type` - issue type (story, bug, epic, etc.)
+- `project-key` - Jira project
+- `summary` - issue title
+- `--template` - template name (if specified)
+- `--component`, `--version`, `--parent`, etc. - optional flags
+
+### Step 2a: Load Template YAML
+
+**Template Selection Logic:**
+
+1. **If --template flag provided:**
+   ```
+   template_name = args.template
+   template_path = find_template(template_name)  # search all template dirs
+   ```
+
+2. **Else, auto-select template:**
+   ```
+   # Priority order:
+   # 1. Project-specific template
+   template_path = f"plugins/jira/templates/{project_key}/{type}.yaml"
+   if not exists(template_path):
+       # 2. Common template
+       template_path = f"plugins/jira/templates/common/{type}.yaml"
+   ```
+
+3. **Load template YAML:**
+   ```python
+   template = yaml.load(template_path)
+   
+   # Resolve inheritance
+   if 'inherits' in template:
+       base = yaml.load(template['inherits'])
+       template = merge(base, template)
+   ```
+
+4. **Validate template:**
+   - Check required fields: `name`, `issue_type`, `description_template`
+   - Verify `placeholders` is defined
+   - Validate against SCHEMA.md
+
+**Handle template not found:**
+```
+Error: Template not found: {template_name}
+Available templates:
+  - common-bug
+  - common-epic
+  - common-story
+  ...
+```
+
+### Step 2b: Load Type-Specific Reference File
+
+**Extract issue type from template:**
+```python
+issue_type = template.get('issue_type')  # e.g., "Bug", "Epic", "Story"
+reference_file = f"../../reference/create-{issue_type.lower()}.md"
+```
+
+**Load reference file:**
+```python
+if os.path.exists(reference_file):
+    reference_content = read_markdown(reference_file)
+    reference_sections = parse_markdown_sections(reference_content)
+else:
+    reference_sections = {}
+```
+
+**Parse reference into sections:**
+
+Extract these key sections from the markdown:
+- `## Summary Guidelines` → summary_guidelines
+- `## Bug Description Template` (or equivalent) → description_template_example
+- `## Interactive Workflow` → workflow_steps
+- `## Version Fields` → version_handling
+
+**Store for later use:**
+```python
+context = {
+    'template': template,
+    'reference': reference_sections,
+    'issue_type': issue_type
+}
+```
+
+### Step 2c: Invoke jira-conventions Skill
+
+**When to invoke:**
+- Always invoke if `project-key` is provided
+- Parse summary for keywords (HyperShift, GCP HCP, etc.)
+
+**How to invoke:**
+```
+Use the jira-conventions skill to load project and team conventions.
+
+Project key: {project-key}
+Issue type: {type}
+Summary: {summary}
+Component: {component if provided}
+
+Return:
+- Project conventions (custom fields, version format, labels)
+- Team conventions (if keywords match)
+- Component suggestions
+- Required fields and their IDs
+```
+
+**Receive convention data:**
+```python
+conventions = {
+    'project': 'CNTRLPLANE',
+    'custom_fields': {
+        'Epic Link': 'customfield_10014',
+        'Target Version': 'customfield_10855'
+    },
+    'version_format': 'openshift-{major}.{minor}',
+    'default_labels': ['cntrlplane'],
+    'component_suggestions': ['HyperShift', 'Control Plane'],
+    'team': 'hypershift',
+    'team_labels': ['hypershift']
+}
+```
+
+### Step 2d: Load Educational Docs
+
+**Check template for documentation field:**
+```yaml
+documentation:
+  guide: "../../docs/issue-types/epic.md"
+  description: "Comprehensive guide on epics: best practices and anti-patterns"
+```
+
+**If documentation field exists:**
+```python
+if 'documentation' in template:
+    doc_path = template['documentation']['guide']
+    doc_description = template['documentation']['description']
+    educational_doc = read_markdown(doc_path) if exists(doc_path) else None
+```
+
+### Step 3: Show Resource References to User
+
+**Display loaded resources:**
+```
+Creating {issue_type} issue for {project-key}
+
+Resources loaded:
+📋 Template: {template_name} ({template_path})
+   Inherits: {base_template if applicable}
+   
+📖 Reference: {reference_file}
+   Provides: Summary guidelines, interactive workflow, examples
+   
+🏢 Project: {project conventions}
+   Custom fields: Epic Link, Target Version
+   Default labels: {labels}
+   
+👥 Team: {team if applicable}
+   Additional labels: {team_labels}
+   Component suggestions: {components}
+
+📚 Guide: {doc_path if applicable}
+   {doc_description}
+
+Let's begin...
+```
+
+This transparency helps users understand:
+- What template is being used
+- What reference guidance is available
+- What project/team rules apply
+- Where to find educational content
+
+### Step 4: Scan and Describe Template
+
+(Existing content continues here...)
+
 ## Educational Content Integration
 
 Templates can reference educational documentation:
@@ -286,7 +468,90 @@ This summary:
 - Helps user prepare information before being prompted
 - Makes template system transparent and debuggable
 
-## Interactive Collection Process
+### Step 5: Apply Template Defaults + Convention Overrides
+
+**Merge configuration from multiple sources** in priority order:
+
+```python
+# Initialize with template defaults
+config = template.get('defaults', {}).copy()
+
+# Apply project conventions
+if conventions and 'project' in conventions:
+    config = merge_deep(config, conventions['project'])
+
+# Apply team conventions
+if conventions and 'team' in conventions:
+    config = merge_deep(config, conventions['team'])
+
+# Apply command-line flags (highest priority)
+if args.component:
+    config['components'] = [{'name': args.component}]
+if args.version:
+    config['versions'] = normalize_version(args.version, conventions)
+if args.priority:
+    config['priority'] = {'name': args.priority}
+if args.security_level:
+    config['security'] = {'name': args.security_level}
+if args.labels:
+    config['labels'].extend(args.labels)
+```
+
+**Merge strategy for specific fields:**
+
+**Labels (combine all sources):**
+```python
+labels = []
+labels.extend(template.get('defaults', {}).get('labels', []))
+labels.extend(conventions.get('project', {}).get('default_labels', []))
+labels.extend(conventions.get('team', {}).get('team_labels', []))
+labels.extend(args.labels or [])
+labels = list(set(labels))  # deduplicate
+```
+
+**Custom fields (convention overrides template):**
+```python
+custom_fields = template.get('defaults', {}).get('custom_fields', {}).copy()
+custom_fields.update(conventions.get('project', {}).get('custom_fields', {}))
+```
+
+**Version normalization (use convention format):**
+```python
+version_format = conventions.get('project', {}).get('version_format')
+if args.version and version_format:
+    normalized = format_version(args.version, version_format)
+    # e.g., "4.21" → "openshift-4.21" with format "openshift-{major}.{minor}"
+```
+
+**Component suggestions (from conventions):**
+```python
+component_suggestions = conventions.get('project', {}).get('component_suggestions', [])
+if component_suggestions and not args.component:
+    # Offer component selection during interactive prompts
+    pass
+```
+
+**Result:**
+```python
+merged_config = {
+    'labels': ['ai-generated-jira', 'template:common-bug', 'cntrlplane', 'hypershift'],
+    'security': {'name': 'Red Hat Employee'},
+    'custom_fields': {
+        'customfield_10014': None,  # Epic Link (will be set if --parent)
+        'customfield_10855': 'openshift-4.21'  # Target Version
+    },
+    'components': [{'name': 'HyperShift'}],
+    'priority': {'name': 'Medium'}
+}
+```
+
+This merged config is used as the base for issue creation.
+
+### Step 6: Prompt for Priority
+
+(Existing priority prompting logic...)
+
+## Interactive Collection Process (Step 7 - Enhanced with Reference Context)
 
 For each placeholder in the template:
 
@@ -304,11 +569,79 @@ Priority order:
 1. `prompt_text` (if specified)
 2. `description` (fallback)
 
-### 3. Show Help if Available
+### 3. Enrich with Reference Context (NEW - Hybrid Approach)
 
-If `help_text` is defined and user types "?" or "help":
-- Display the help text
-- Show examples if available
+**Before displaying prompt**, check if reference file has relevant context:
+
+```python
+# Match placeholder name to reference sections
+reference_context = find_reference_context(
+    placeholder_name=placeholder['name'],
+    reference_sections=reference_sections
+)
+
+# Example matches:
+# placeholder "problem_description" → reference "## 1. Problem Description"
+# placeholder "steps" → reference "## 4. Steps to Reproduce"
+# placeholder "epic_name" → reference "Epic Name field"
+```
+
+**If reference context found, combine it with template help:**
+
+```python
+combined_help = []
+
+# Template help text (structured)
+if 'help_text' in placeholder:
+    combined_help.append(f"(from template) {placeholder['help_text']}")
+
+# Reference context (prose, examples)
+if reference_context:
+    combined_help.append(f"\n(from reference) {reference_context}")
+    
+# Examples from template
+if 'examples' in placeholder:
+    combined_help.append("\nExamples:")
+    for example in placeholder['examples']:
+        combined_help.append(f"  - {example}")
+
+help_text = "\n".join(combined_help)
+```
+
+**Display enriched prompt:**
+```
+Problem Description:
+[?] (from template) Clear, detailed description of the issue
+    Include context, component affected, impact (who, severity)
+    
+    (from reference) Provide:
+    - What you were trying to do
+    - What component or feature is affected
+    - Who is affected? How severe is it?
+    - When did this start happening?
+    
+    Examples:
+      - "The kube-apiserver pod crashes immediately after upgrading..."
+      - "The login button on mobile app doesn't respond to taps..."
+    
+    See reference/create-bug.md for more examples.
+
+>
+```
+
+**Benefits of hybrid approach:**
+- Template provides: structure, validation, field definition
+- Reference provides: context, prose guidance, real-world examples
+- User gets best of both: structured + contextual help
+
+### 4. Show Help if Available
+
+Help is displayed automatically (enriched from template + reference).
+
+If user types "?" or "help" explicitly:
+- Display full help_text (template + reference combined)
+- Show all examples
+- Show link to reference file section
 - Re-prompt for value
 
 ### 4. Collect Value
@@ -771,6 +1104,112 @@ Failed to create issue:
 
 Suggested action: <based on error>
 ```
+
+### Step 8: Validate Summary Format
+
+**Check for common anti-patterns:**
+
+1. **Summary looks like full user story:**
+   ```python
+   if summary.lower().startswith("as a") or "i want" in summary.lower() or "so that" in summary.lower():
+       warn_user_story_in_summary()
+   ```
+
+2. **Summary exceeds recommended length:**
+   ```python
+   if len(summary) > 100:
+       warn_summary_too_long()
+   ```
+
+**Prompt for correction if detected:**
+```
+⚠️  Summary looks like a full user story. Summaries should be concise titles.
+
+Current: "As a cluster admin, I want to configure ImageTagMirrorSet..."
+
+Suggested: "Enable ImageTagMirrorSet configuration in HostedCluster CRs"
+
+Use suggested summary? (yes/no/edit)
+```
+
+### Step 9: Security Validation
+
+**Scan all collected content for sensitive data:**
+
+```python
+sensitive_patterns = {
+    'credentials': r'(password|passwd|pwd|secret|token|api[_-]?key)',
+    'cloud_keys': r'(aws[_-]?(access|secret)|gcp[_-]?key|azure[_-]?key)',
+    'kubeconfig': r'(kubeconfig|\.kube/config)',
+    'ssh_keys': r'(ssh[_-]?rsa|-----BEGIN)',
+    'certificates': r'(-----BEGIN CERTIFICATE|\.pem|\.crt)',
+    'urls_with_creds': r'https?://[^:]+:[^@]+@'
+}
+
+for field_name, field_value in collected_data.items():
+    for pattern_name, pattern in sensitive_patterns.items():
+        if re.search(pattern, field_value, re.IGNORECASE):
+            alert_sensitive_data(field_name, pattern_name)
+            return STOP_CREATION
+```
+
+**If sensitive data detected:**
+```
+🚨 SECURITY ALERT: Potential {pattern_name} detected in {field_name}
+
+DO NOT include sensitive data in Jira issues:
+- Credentials, API tokens, passwords
+- Cloud access keys (AWS, GCP, Azure)
+- Kubeconfigs, SSH keys, certificates
+- URLs with embedded credentials
+
+Please remove the sensitive information and try again.
+Use placeholders like: "<redacted>", "XXXXXX", or "<your-value-here>"
+```
+
+**Stop creation** - do not proceed to MCP if sensitive data found.
+
+### Step 10: Return Structured Issue Data (NOT Create)
+
+**Template-engine returns data, does NOT create the issue.**
+
+The `create` router skill handles MCP creation (Phase 7).
+
+**Return format:**
+```python
+return {
+    'summary': final_summary,
+    'description': rendered_description,
+    'issue_type': issue_type,
+    'project': {
+        'key': project_key
+    },
+    'fields': {
+        'components': components,
+        'versions': versions,
+        'customfield_10014': epic_link,  # if applicable
+        'customfield_10855': target_version,  # if applicable
+        'customfield_10018': parent_link,  # if applicable
+        # ... other custom fields
+    },
+    'labels': labels,
+    'priority': {'name': priority},
+    'security': security,
+    'template_used': template_name,
+    'validation_passed': True
+}
+```
+
+**Create router receives this data and:**
+1. Runs final security validation (Phase 7)
+2. Creates issue via MCP (Phase 8)
+3. Returns result to user (Phase 9)
+
+This separation allows:
+- Template-engine focuses on template processing
+- Create router handles MCP interaction
+- Clear separation of concerns
+- Easier testing and debugging
 
 ## Educational Content
 
