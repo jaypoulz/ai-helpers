@@ -22,30 +22,30 @@ defaults:
     - template:rfe
 
 description_template: |
-  h4. Nature and Description of Request
+  #### Nature and Description of Request
 
   {{nature_description}}
 
-  h5. Current Limitation
+  ##### Current Limitation
   {{current_limitation}}
 
-  h5. Desired Behavior
+  ##### Desired Behavior
   {{desired_behavior}}
 
-  h5. Use Case
+  ##### Use Case
   {{use_case}}
 
-  h4. Business Requirements
+  #### Business Requirements
 
   {{business_requirements}}
 
-  h4. Affected Packages and Components
+  #### Affected Packages and Components
 
   {{#components}}
-  * {{.}}
+  - {{.}}
   {{/components}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
 

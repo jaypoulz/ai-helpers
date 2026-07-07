@@ -30,25 +30,25 @@ display_format:
 description_template: |
   {{overview}}
 
-  h4. Research Questions
+  #### Research Questions
 
   {{#research_questions}}
-  * {{.}}
+  - {{.}}
   {{/research_questions}}
 
-  h4. Involved Teams
+  #### Involved Teams
 
   {{#involved_teams}}
-  * {{.}}
+  - {{.}}
   {{/involved_teams}}
 
-  h4. Acceptance Criteria
+  #### Acceptance Criteria
 
   {{additional_spikes_placeholder}}
   {{design_proposal_placeholder}}
   {{#additional_context}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
   {{/additional_context}}

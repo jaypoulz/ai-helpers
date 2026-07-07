@@ -36,14 +36,14 @@ display_format:
 description_template: |
   As a {{user_role}}, I want to {{action}}, so that {{value}}.
 
-  h4. Acceptance Criteria
+  #### Acceptance Criteria
 
   {{#acceptance_criteria}}
-  * {{.}}
+  - {{.}}
   {{/acceptance_criteria}}
   {{#additional_context}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
   {{/additional_context}}

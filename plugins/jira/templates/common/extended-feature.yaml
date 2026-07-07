@@ -19,55 +19,55 @@ defaults:
     - template:extended-feature
 
 description_template: |
-  h4. Market Problem
+  #### Market Problem
 
   {{market_problem}}
 
-  h4. Strategic Value
+  #### Strategic Value
 
-  h5. Customer Value
+  ##### Customer Value
   {{customer_value}}
 
-  h5. Business Impact
+  ##### Business Impact
   {{business_impact}}
 
-  h5. Strategic Alignment
+  ##### Strategic Alignment
   {{strategic_alignment}}
 
-  h4. Success Criteria
+  #### Success Criteria
 
-  h5. Adoption Metrics
+  ##### Adoption Metrics
   {{#adoption_metrics}}
-  * {{.}}
+  - {{.}}
   {{/adoption_metrics}}
 
-  h5. Usage Metrics
+  ##### Usage Metrics
   {{#usage_metrics}}
-  * {{.}}
+  - {{.}}
   {{/usage_metrics}}
 
-  h5. Outcome Metrics
+  ##### Outcome Metrics
   {{#outcome_metrics}}
-  * {{.}}
+  - {{.}}
   {{/outcome_metrics}}
 
-  h5. Business Metrics
+  ##### Business Metrics
   {{#business_metrics}}
-  * {{.}}
+  - {{.}}
   {{/business_metrics}}
 
-  h4. Component Epics
+  #### Component Epics
 
   {{#component_epics}}
-  * {{.}}
+  - {{.}}
   {{/component_epics}}
 
-  h4. Timeline and Milestones
+  #### Timeline and Milestones
 
-  * Target Release: {{target_release}}
-  * Key Milestones: {{milestones}}
+  - Target Release: {{target_release}}
+  - Key Milestones: {{milestones}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
 

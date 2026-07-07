@@ -432,7 +432,23 @@ Always validate:
 
 ## Description Formatting
 
-For complete formatting guidelines (heading standards, MCP vs Direct API), see the [Jira Formatting section in the plugin README](../../README.md#jira-formatting).
+**CRITICAL: Always use markdown format when rendering templates.**
+
+For complete formatting guidelines, see the [Jira Formatting section in the plugin README](../../README.md#jira-formatting).
+
+**Required format rules:**
+- Main sections: `#### Section Name` (h4 level)
+- Subsections: `*Subsection Name*` (emphasis, NOT headers like `##` or `###`)
+- Numbered lists: `1.`, `2.`, `3.` (NOT `#` which creates headers)
+- Bullet lists: `-` (NOT `*` which can conflict with emphasis)
+- Code blocks: ` ```language\ncode\n``` `
+- Inline code: `` `code` ``
+
+**Common mistakes to avoid:**
+- ❌ Using `#` for numbered lists → Creates `h1.` headers instead of list items
+- ❌ Using `##` or `###` for subsections → Creates oversized headers
+- ✅ Use `1.`, `2.`, `3.` for numbered lists
+- ✅ Use `*Subsection*` for subsection labels (emphasis)
 
 ### Template Rendering
 
@@ -442,6 +458,7 @@ For complete formatting guidelines (heading standards, MCP vs Direct API), see t
    - `{{name}}` → Insert value
    - `{{#list}}...{{/list}}` → Iterate list
    - `{{#optional}}...{{/optional}}` → Show if truthy
+4. **Verify formatting:** Ensure numbered lists use `1.` syntax, not `#`
 
 ## MCP Tool Parameters
 

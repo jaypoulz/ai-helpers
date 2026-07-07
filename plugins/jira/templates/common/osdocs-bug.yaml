@@ -29,32 +29,32 @@ display_format:
 
 # Documentation-specific description format
 description_template: |
-  h4. Description of documentation issue
+  #### Description of documentation issue
 
   {{problem_description}}
 
-  h4. Affected Documentation
+  #### Affected Documentation
 
-  * URL: {{doc_url}}
-  * Section: {{doc_section}}
-  * OpenShift Version: {{version}}
+  - URL: {{doc_url}}
+  - Section: {{doc_section}}
+  - OpenShift Version: {{version}}
 
-  h4. Type of Issue
+  #### Type of Issue
 
   {{issue_type}}
 
-  h4. Current Content
+  #### Current Content
 
   {quote}
   {{current_content}}
   {quote}
 
-  h4. Suggested Correction
+  #### Suggested Correction
 
   {{suggested_fix}}
   {{#additional_context}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
   {{/additional_context}}

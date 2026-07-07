@@ -32,26 +32,26 @@ display_format:
   - status
 
 description_template: |
-  h4. Market Problem
+  #### Market Problem
 
   {{market_problem}}
 
-  h4. Strategic Value
+  #### Strategic Value
 
   {{strategic_value}}
 
-  h4. Success Criteria
+  #### Success Criteria
 
   {{#success_criteria}}
-  * {{.}}
+  - {{.}}
   {{/success_criteria}}
 
-  h4. Timeline
+  #### Timeline
 
-  * Target: {{target_release}}
+  - Target: {{target_release}}
   {{#additional_context}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
   {{/additional_context}}

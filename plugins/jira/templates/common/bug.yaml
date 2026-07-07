@@ -34,34 +34,34 @@ display_format:
   - status
 
 description_template: |
-  h4. Description of problem
+  #### Description of problem
 
   {{problem_description}}
 
-  h4. Version-Release number
+  #### Version-Release number
 
   {{version}}
 
-  h4. How reproducible
+  #### How reproducible
 
   {{reproducibility}}
 
-  h4. Steps to Reproduce
+  #### Steps to Reproduce
 
   {{#steps}}
-  # {{.}}
+  1. {{.}}
   {{/steps}}
 
-  h4. Actual results
+  #### Actual results
 
   {{actual_results}}
 
-  h4. Expected results
+  #### Expected results
 
   {{expected_results}}
   {{#additional_context}}
 
-  h4. Additional Context
+  #### Additional Context
 
   {{additional_context}}
   {{/additional_context}}

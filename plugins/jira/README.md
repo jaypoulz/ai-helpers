@@ -61,28 +61,69 @@ Ensure you have the ai-helpers marketplace enabled, via [the instructions here](
 
 ### Jira Formatting
 
-**Heading Standards:**
+**CRITICAL: When using MCP tools, always use markdown format in your input.**
 
-Templates use Jira Wiki markup headings:
-- Main headings: `h4.`
-- Subheadings: `h5.`
-- Bullet lists: `* Item`
+The MCP Atlassian server automatically converts markdown to wiki markup for Jira. Even though Red Hat uses Jira Cloud (https://redhat.atlassian.net), the MCP tool handles the conversion, and the resulting wiki markup renders correctly.
 
-**MCP vs Direct API:**
+**Required format for ALL Jira descriptions (via MCP tools):**
 
-**CRITICAL:** When using bold text in descriptions, formatting differs based on tool used.
+**Main sections (h4 level):**
+```markdown
+#### Section Name
+```
 
-**When using MCP tools** (`mcp__atlassian__jira_create_issue`, `mcp__atlassian__jira_update_issue`):
-- Bold text: `**text**` (double asterisks)
-- MCP tools automatically convert Markdown to Jira Wiki markup
+**Subsections within a section (use italic emphasis, NOT headers):**
+```markdown
+*Subsection Name*
+```
+This converts to italic text, not a header. DO NOT use `##`, `###`, or `#####` for subsections as they create oversized headers.
 
-**When using Jira REST API directly** (curl commands):
-- Bold text: `*text*` (single asterisks)
-- API requires native Jira Wiki markup (no conversion)
+**Numbered lists:**
+```markdown
+1. First item
+2. Second item
+3. Third item
+```
+DO NOT use `#` at the start of lines - this creates headers, not list items.
 
-**Always check before creating/updating issues:**
-1. Are you using an MCP tool? → Use `**text**` for bold
-2. Are you using the API directly? → Use `*text*` for bold
+**Bullet lists:**
+```markdown
+- First item
+- Second item
+- Third item
+```
+
+**Inline code:**
+```markdown
+`code snippet`
+```
+
+**Code blocks:**
+````markdown
+```go
+func main() {
+    fmt.Println("Hello")
+}
+```
+````
+
+**Bold text:**
+```markdown
+**bold text**
+```
+
+**Italic text (for emphasis):**
+```markdown
+*italic text*
+```
+
+**Common formatting mistakes:**
+- ❌ Using `#` for numbered lists → Creates headers
+- ❌ Using `##` or `###` for subsections → Creates oversized headers
+- ❌ Using `*` for bullet lists → Can conflict with emphasis
+- ✅ Use `1.`, `2.`, `3.` for numbered lists
+- ✅ Use `*Subsection*` for subsection labels (emphasis, not headers)
+- ✅ Use `-` for bullet lists
 
 ## Available Commands
 
