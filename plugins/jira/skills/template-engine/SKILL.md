@@ -1284,5 +1284,6 @@ Validation is applied at multiple levels:
 ## See Also
 
 - [Template Schema](../../templates/SCHEMA.md)
-- [/jira:create Command](../../commands/create.md)
+- [Create Router Skill](../create/SKILL.md) - Dual-mode router that invokes this skill
 - [Template Management](../template-management/SKILL.md)
+- [Templates README](../../templates/README.md) - Template system guide

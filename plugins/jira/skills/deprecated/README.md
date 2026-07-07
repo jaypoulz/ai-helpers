@@ -5,8 +5,10 @@ This directory contains legacy type-specific skills that have been replaced by t
 ## Why These Are Deprecated
 
 These skills are **no longer used** by the `/jira:create` command. They have been replaced by:
-- **Unified skill**: `create-issue` (template-driven, handles all issue types)
+- **Router skill**: `create` (determines template vs reference mode)
+- **Template engine**: `template-engine` (processes YAML templates)
 - **Template system**: `plugins/jira/templates/` (project-specific and common templates)
+- **Reference files**: `plugins/jira/reference/` (markdown guidance and examples)
 
 ## What Changed
 
@@ -16,8 +18,10 @@ These skills are **no longer used** by the `/jira:create` command. They have bee
 - Referenced legacy wiki-markup syntax for Jira Server/DC
 
 **New approach** (current):
-- Single `create-issue` skill loads appropriate template
-- Templates define formatting, fields, and validation
+- **Router skill** (`create`) selects template mode or reference mode
+- **Template mode**: `template-engine` skill processes YAML templates
+- **Reference mode**: Uses markdown reference files with prose guidance
+- **Hybrid**: Templates + References + Conventions combined
 - Uses markdown format (correct for Jira Cloud)
 
 ## Why Not Deleted
