@@ -154,12 +154,21 @@ The command processes accomplishments using this pattern:
    - Validate format (YYYY-MM-DD)
    - Calculate quarter (Q1-Q4)
 
-3. **Directory Structure Setup**
+3. **Directory Structure Setup and Input Cleaning**
    - Create `.work/quarterly-connection/inputs/` and `outputs/` directory structure if not exists
    - Create subdirectories: `jira-exports/`, `google-docs/`, `emails/`, `slack/`, `additional/`
+   - **CRITICAL: Clean inputs directory before gathering new data:**
+     - Scan all files in `inputs/` subdirectories (jira-exports, google-docs, emails, slack, additional)
+     - Check file modification dates and content dates against quarter date range
+     - Warn user about files that appear to be from OUTSIDE the quarter date range
+     - Prompt: "Found X files in inputs directory. Y files appear to be from outside [start-date] to [end-date]. Should I: (A) Archive old files to inputs/archive-[quarter]/ and start fresh, (B) Keep all files and filter by date during analysis, (C) Let me clean manually?"
+     - If option A: Move old files to archive subdirectory, create fresh input structure
+     - If option B: Proceed but apply strict date filtering during analysis
+     - If option C: Wait for user to clean directory, then confirm "done"
    - Create helper files if they don't already exist (preserves user modifications):
      - `inputs/README.md` - Instructions for gathering data
      - `outputs/README.md` - Explanation of generated files
+   - **Why this matters:** Prevents contamination from previous quarters' data and ensures report accuracy
 
 4. **Automatic Data Scanning (.daily/ directory)**
 
@@ -396,13 +405,14 @@ The command processes accomplishments using this pattern:
       - Prompt user: "Found these low-evidence items. Can you add links/details?"
    
    **Quality Threshold:**
-   - Target: 5-10 medium to high evidence bullets (not 50+ weak bullets)
-   - Prefer 5 well-documented accomplishments over 30 vague ones
+   - Target: 6-12 medium to high evidence bullets (not 50+ weak bullets)
+   - Prefer 10 well-documented accomplishments over 40 vague ones
    - Each bullet should have:
      - At least one verifiable link (PR, Jira, or document URL)
      - Clear, quantified impact (or explicit capability enabled)
      - Specific details (not generic descriptions)
    - **Focus on your most impactful work** - the highlights that best represent your quarter
+   - **Range rationale:** Wide enough to avoid omitting important work, narrow enough to force prioritization
    
    **Benefits:**
    - Stronger performance review narrative
@@ -414,11 +424,11 @@ The command processes accomplishments using this pattern:
    **Output to user:**
    ```
    Evidence Strength Report:
-   - High Evidence (8-10): 6 accomplishments
-   - Medium Evidence (5-7): 8 accomplishments (3 included for competency coverage, 5 skipped as redundant)
-   - Low Evidence (0-4): 12 accomplishments (excluded - no verifiable deliverables)
+   - High Evidence (8-10): 7 accomplishments
+   - Medium Evidence (5-7): 10 accomplishments (4 included for competency coverage, 6 skipped as redundant)
+   - Low Evidence (0-4): 15 accomplishments (excluded - no verifiable deliverables)
    
-   Final count: 9 accomplishments with strong evidence
+   Final count: 11 accomplishments with strong evidence (within 6-12 target)
    ```
 
 11. **Format Application** - Transform to dense format:
@@ -439,7 +449,11 @@ The command processes accomplishments using this pattern:
 
 12. **Competency Mapping (ORGANIZATION ONLY, NOT EVALUATION)**
    - Identify which competencies each accomplishment demonstrates
+   - **Map each accomplishment to its PRIMARY competency** (the most relevant one)
    - Group accomplishments by competencies relevant to user's CURRENT role
+   - **CRITICAL: Each accomplishment appears EXACTLY ONCE** (no duplication across competency categories)
+   - Target output: **6-8 unique accomplishments total** (Top 3 + 3-5 others)
+   - **Quality over quantity:** Prefer fewer high-evidence items over many weak ones
    - **DO NOT** assess whether accomplishments are "sufficient" for the role
    - **DO NOT** suggest what level the accomplishments represent
    - **ONLY** organize by competency categories expected for the role
@@ -656,13 +670,45 @@ The command processes accomplishments using this pattern:
    - **Detailed:** `q[N]-[year]-complete-accomplishments.md`
    - **Workday HTML Format (Primary):**
      - **TOP 3 ACCOMPLISHMENTS section at the beginning** (if specified by user)
+     - **OTHER ACCOMPLISHMENTS section:** 3-5 additional items (not in Top 3)
+     - **TOTAL BULLETS: 6-8 unique accomplishments** (quality over quantity)
+     - **Each accomplishment appears EXACTLY ONCE** with PRIMARY competency only
+     - **NO DUPLICATION** across competency categories
      - Bulleted list organized by competency categories
      - Clickable hyperlinks: `<a href="URL">readable text</a>`
-     - Explicit Red Hat competency keywords
+     - Explicit Red Hat competency keywords (1 Responsibility + 1 Skill)
      - One sentence per bullet
      - Dense format (no unnecessary adjectives/adverbs)
-     - Top 3 accomplishments potentially marked or visually distinguished
      - Copy/paste directly into Workday
+     - **Example structure:**
+       ```html
+       <h2>Top Accomplishments</h2>
+       <ul>
+         <li>Accomplishment 1 via Competency A</li>
+         <li>Accomplishment 2 via Competency B</li>
+         <li>Accomplishment 3 via Competency C</li>
+       </ul>
+       
+       <h2>Other Accomplishments</h2>
+       
+       <h3>Competency D</h3>
+       <ul>
+         <li>Accomplishment 4 via Competency D</li>
+       </ul>
+       
+       <h3>Competency E</h3>
+       <ul>
+         <li>Accomplishment 5 via Competency E</li>
+         <li>Accomplishment 6 via Competency E</li>
+       </ul>
+       
+       <h3>Competency F</h3>
+       <ul>
+         <li>Accomplishment 7 via Competency F</li>
+       </ul>
+       
+       Total: 7 unique accomplishments (3 top + 4 others)
+       ```
    - **Markdown Format (Secondary):**
      - Same content as HTML
      - Markdown links: `[text](URL)`
@@ -801,32 +847,40 @@ Files are saved to `.work/quarterly-connection/outputs/` directory (gitignored).
 - **Primary Output (HTML)**: `q[N]-[year]-accomplishments-workday.html`
   - **Workday-ready HTML format - COPY/PASTE DIRECTLY:**
     - **Top Accomplishments** section (3 bullets highlighting most significant work)
-    - **Other Accomplishments** section organized by competency categories (h3 headers)
+    - **Other Accomplishments** section (3-5 bullets, organized by competency categories with h3 headers)
+    - **TOTAL: 6-8 unique accomplishments** (quality over quantity)
+    - **Each accomplishment appears EXACTLY ONCE** with PRIMARY competency only
+    - **NO DUPLICATION** across competency categories
     - Clickable hyperlinks: `<a href="URL">PR#123</a>`, `<a href="URL">JIRA-456</a>`
-    - Dense format with explicit Red Hat v10.6 competency keywords
+    - Dense format with explicit Red Hat v10.6 competency keywords (1 Responsibility + 1 Skill)
     - Quantified impact where possible
     - **Clean format - no summary statistics, no extra commentary**
     - Opens in browser for easy copying
-    - Example structure:
+    - Example structure (7 unique accomplishments):
       ```html
       <h2>Top Accomplishments</h2>
       <ul>
-        <li>Major achievement 1...</li>
-        <li>Major achievement 2...</li>
-        <li>Major achievement 3...</li>
+        <li>Major achievement 1 via Competency A...</li>
+        <li>Major achievement 2 via Competency B...</li>
+        <li>Major achievement 3 via Competency C...</li>
       </ul>
 
       <h2>Other Accomplishments</h2>
 
-      <h3>Own and Deliver Business Impact + Business impact</h3>
+      <h3>Competency D</h3>
       <ul>
-        <li>Accomplishment...</li>
-        <li>Accomplishment...</li>
+        <li>Accomplishment 4 via Competency D...</li>
       </ul>
 
-      <h3>Technical Impact + Technical Acumen</h3>
+      <h3>Competency E</h3>
       <ul>
-        <li>Accomplishment...</li>
+        <li>Accomplishment 5 via Competency E...</li>
+        <li>Accomplishment 6 via Competency E...</li>
+      </ul>
+      
+      <h3>Competency F</h3>
+      <ul>
+        <li>Accomplishment 7 via Competency F...</li>
       </ul>
       ```
 

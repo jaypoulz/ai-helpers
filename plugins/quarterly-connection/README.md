@@ -10,12 +10,16 @@ Build quarterly accomplishment summaries with dense formatting and Red Hat compe
 
 This tool prefers **fewer accomplishments with strong evidence** over many weak ones:
 
-- **Target:** 5-10 medium to high evidence bullets (not 50+)
+- **Target:** 6-8 unique accomplishments total (not 50+)
+  - Top 3 accomplishments (user-specified highlights)
+  - 3-5 other high-evidence accomplishments (not in Top 3)
 - **Evidence scoring:** 0-10 scale based on verifiability
   - **High (8-10):** Multiple evidence types (PR + Jira + doc), quantified impact, cross-team
   - **Medium (5-7):** Single evidence type, described impact, team-internal
   - **Low (0-4):** No verifiable deliverable, vague impact, self-reported only
 - **Filtering:** Focus on High Evidence items, selective Medium Evidence for competency gaps, exclude Low Evidence
+- **NO DUPLICATION:** Each accomplishment appears EXACTLY ONCE with PRIMARY competency only
+- **Structure:** Top 3 accomplishments + 3-5 others organized by competency (6-8 total unique bullets)
 
 ### Automatic .daily/ Integration
 
@@ -65,7 +69,7 @@ Build a comprehensive quarterly accomplishment summary by gathering data from mu
 - **Opinionated directory structure:** `.work/quarterly-connection/inputs/` with organized subdirectories
 - **Automatic queries:** GitHub PRs and Jira API (if configured)
 - **Deduplication:** Combines Jira+PR for same work
-- **Quality over quantity:** Target 5-10 medium to high evidence accomplishments (not 50+ weak ones)
+- **Quality over quantity:** Target 6-12 medium to high evidence accomplishments (not 50+ weak ones)
 - **Dense formatting:** No fluff, facts only
 - **Full URLs:** Readable link text for all references
 - **Competency mapping:** Red Hat v10.6 framework
@@ -83,11 +87,14 @@ Build a comprehensive quarterly accomplishment summary by gathering data from mu
 
 **Output:**
 - **Primary (HTML):** `q[N]-[year]-accomplishments-workday.html` ✨ **COPY/PASTE DIRECTLY INTO WORKDAY**
-  - Clean format: **Top Accomplishments** (3 bullets) + **Other Accomplishments** (by competency)
+  - Clean format: **Top Accomplishments** (3 bullets) + **Other Accomplishments** (3-5 bullets by competency)
+  - **TOTAL: 6-8 unique accomplishments** (quality over quantity)
+  - **Each accomplishment appears EXACTLY ONCE** with PRIMARY competency only
+  - **NO DUPLICATION** across competency categories
   - No summary statistics, no extra commentary
   - Clickable links ready for Workday
 - **Secondary (Markdown):** `q[N]-[year]-accomplishments-workday.md` ✨ **COPY/PASTE DIRECTLY**
-  - Same clean structure as HTML
+  - Same clean structure as HTML (6-8 unique bullets)
   - For systems that accept markdown
 - **Detailed Analysis:** `q[N]-[year]-complete-accomplishments.md` 📊 **BACKGROUND REFERENCE**
   - Extended context on top 3 accomplishments
@@ -96,20 +103,21 @@ Build a comprehensive quarterly accomplishment summary by gathering data from mu
   - Summary statistics (counts, quantified impact)
   - **NOT for Workday - use for self-reflection and planning**
 - Saved to `.work/quarterly-connection/outputs/` directory
-- **Primary/Secondary files do NOT include: Summary statistics, analysis, level assessments, promotion evaluations**
+- **Primary/Secondary files do NOT include: Summary statistics, analysis, level assessments, promotion evaluations, duplicate bullets**
 
 ## How Data Gathering Works
 
 **The command guides you through data collection SEQUENTIALLY:**
 
 1. **Command creates directory structure** - No manual setup required
-2. **Prompts ONE source at a time** - Workday Goals → Jira → GitHub → Google Drive → Email → Slack → Other
-3. **You save documents as .txt, .md, or .eml files** - No PDFs, CSVs, etc.
-4. **Command reads each file** - Understands content automatically
-5. **Prompts for public links** - "I found `doc.md` about X. Public link? (URL or 'none')"
-6. **Prompts for importance hierarchy** - "Default: Jira/GitHub highest → Docs/Email medium → Slack lower. Adjust?"
-7. **Prompts for TOP 3 accomplishments** - "What were your 3 most impactful accomplishments this quarter?"
-8. **Stores mappings** - `source-links.txt` (URLs) and `importance-hierarchy.txt` (priorities + top 3)
+2. **Cleans input directory** - Checks for files from previous quarters, prompts to archive or filter
+3. **Prompts ONE source at a time** - Workday Goals → Jira → GitHub → Google Drive → Email → Slack → Other
+4. **You save documents as .txt, .md, or .eml files** - No PDFs, CSVs, etc. (ONLY save files from the target quarter)
+5. **Command reads each file** - Understands content automatically
+6. **Prompts for public links** - "I found `doc.md` about X. Public link? (URL or 'none')"
+7. **Prompts for importance hierarchy** - "Default: Jira/GitHub highest → Docs/Email medium → Slack lower. Adjust?"
+8. **Prompts for TOP 3 accomplishments** - "What were your 3 most impactful accomplishments this quarter?"
+9. **Stores mappings** - `source-links.txt` (URLs) and `importance-hierarchy.txt` (priorities + top 3)
 
 **Why Workday Goals First?**
 - Provides critical context for professional development
